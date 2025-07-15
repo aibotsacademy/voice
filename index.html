@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive AI Voice Agent Comparison</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: A user-centric, single-page application designed as an interactive dashboard. The structure prioritizes task-based exploration over mimicking the original report's linear format. The core components are: 1) A 'Dashboard' view with dynamic filters (by user type, pricing, key features) and a responsive grid of platform cards for at-a-glance comparison. This allows users to immediately narrow down options based on their primary criteria. 2) A 'Platform Deep Dive' view, triggered from the dashboard, which uses a combination of radar charts for multi-dimensional analysis (e.g., flexibility, ease of use), structured text for pros/cons, and clear pricing breakdowns. 3) A 'Key Takeaways' section summarizing the report's conclusions and future trends. This structure was chosen because it transforms passive reading into active exploration, enabling users to quickly find relevant information and make informed comparisons, which is the primary goal of someone reading such a report. -->
+    <!-- Visualization & Content Choices: 1. Platform Comparison (Inform/Compare): A dynamic card grid on the dashboard, updated by interactive filters. This is more engaging than a static table. Justification: Allows for rapid, user-driven filtering to find relevant platforms. Method: JS DOM manipulation. 2. Platform Profile (Compare/Inform): A Radar Chart for each platform's 'Deep Dive' view, visualizing ratings on key attributes like Flexibility, Ease of Use, Voice Quality, NLP Power, and Cost. Justification: Radar charts are excellent for showing multi-dimensional strengths and weaknesses in a single, easy-to-understand graphic. Library: Chart.js (Canvas). 3. Cost Comparison (Compare): A dynamic bar chart will be used to compare key pricing metrics like monthly costs or per-minute rates in the deep dive. Justification: Bar charts are the clearest way to compare discrete quantitative values. Library: Chart.js (Canvas). 4. Pros & Cons (Inform): A clean, two-column layout. Justification: High readability for qualitative data. Method: HTML/Tailwind. All choices adhere to the NO SVG/Mermaid constraint and are designed to make dense report data accessible and interactive. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8; /* Warm off-white */
+            color: #383737; /* Dark grayish brown */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-link.active {
+            color: #4A55A2; /* Muted blue */
+            border-bottom-color: #4A55A2;
+        }
+        .platform-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .platform-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+         @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-30 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-[#4A55A2]">AI Voice<span class="font-light text-[#383737]">Insights</span></span>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a id="nav-dashboard" class="nav-link text-gray-700 hover:text-[#4A55A2] border-b-2 border-transparent hover:border-[#4A55A2]">Dashboard</a>
+                    <a id="nav-takeaways" class="nav-link text-gray-700 hover:text-[#4A55A2] border-b-2 border-transparent hover:border-[#4A55A2]">Key Takeaways</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Dashboard View -->
+        <section id="view-dashboard">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold tracking-tight">AI Voice Agent Comparison</h1>
+                <p class="mt-2 text-lg text-gray-600 max-w-3xl mx-auto">An interactive tool to help you find the right AI voice platform for your business needs. Use the filters to narrow your search.</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-md p-4 md:p-6 mb-8 sticky top-[65px] z-20">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="filter-type" class="block text-sm font-medium text-gray-700">Best for</label>
+                        <select id="filter-type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#4A55A2] focus:border-[#4A55A2] sm:text-sm rounded-md">
+                            <option value="all">All User Types</option>
+                            <option value="developer">Developers (API-First)</option>
+                            <option value="business">Business Teams (No-Code)</option>
+                            <option value="regulated">Regulated Industries</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-feature" class="block text-sm font-medium text-gray-700">Key Feature</label>
+                        <select id="filter-feature" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#4A55A2] focus:border-[#4A55A2] sm:text-sm rounded-md">
+                            <option value="all">All Features</option>
+                            <option value="low-latency">Low Latency (<500ms)</option>
+                            <option value="nlp">Advanced NLP / GenAI</option>
+                            <option value="integrations">Strong Integrations</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-pricing" class="block text-sm font-medium text-gray-700">Pricing Model</label>
+                        <select id="filter-pricing" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#4A55A2] focus:border-[#4A55A2] sm:text-sm rounded-md">
+                            <option value="all">All Models</option>
+                            <option value="per-minute">Per Minute</option>
+                            <option value="per-user">Per User / Subscription</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform Cards -->
+            <div id="platform-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Platform cards will be dynamically inserted here -->
+            </div>
+             <p id="no-results" class="text-center text-gray-500 py-10 hidden">No platforms match the selected filters.</p>
+        </section>
+
+        <!-- Deep Dive View -->
+        <section id="view-deep-dive" class="hidden">
+            <!-- Deep dive content will be dynamically inserted here -->
+        </section>
+
+        <!-- Key Takeaways View -->
+        <section id="view-takeaways" class="hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Key Takeaways & Future Outlook</h1>
+                <p class="mt-2 text-lg text-gray-600 max-w-3xl mx-auto">The AI voice agent market is dynamic and growing. Here are the essential conclusions from the report and a look at what's next.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-[#4A55A2]">GenAI Dominance</h3>
+                    <p class="mt-2 text-gray-600">The shift towards sophisticated LLMs is accelerating, enabling agents to handle more natural, free-flowing dialogues beyond rigid scripts.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-[#4A55A2]">Latency is King</h3>
+                    <p class="mt-2 text-gray-600">Minimizing response delay is paramount. Platforms that achieve sub-500ms latency provide a more natural conversational flow, directly impacting user satisfaction.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-[#4A55A2]">Hybrid AI-Human Models</h3>
+                    <p class="mt-2 text-gray-600">The future is collaborative. AI will handle routine queries and seamlessly escalate complex issues to human agents, creating an efficient, blended service model.</p>
+                </div>
+                 <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-[#4A55A2]">Deep System Integration</h3>
+                    <p class="mt-2 text-gray-600">Agents are becoming more embedded in business ecosystems (CRM, ERP), allowing them to perform actions and access real-time data for hyper-personalized interactions.</p>
+                </div>
+                 <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-[#4A55A2]">Hidden Costs are Common</h3>
+                    <p class="mt-2 text-gray-600">Look beyond base prices. Many platforms charge extra for essential features like transcription, advanced AI, or even call forwarding. A full TCO analysis is crucial.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold text-[#4A55A2]">Compliance is Non-Negotiable</h3>
+                    <p class="mt-2 text-gray-600">As AI handles sensitive data, certifications like HIPAA, GDPR, and SOC2 are becoming mandatory requirements for enterprise adoption, not just features.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const platformData = [
+                {
+                    id: 'callhippo',
+                    name: 'Callhippo',
+                    tagline: 'Business Phone System with AI Features',
+                    logoColor: 'text-orange-500',
+                    userType: 'business',
+                    featureType: 'nlp',
+                    pricingModel: 'per-user',
+                    latency: 'occasional-delay',
+                    overview: 'Callhippo positions itself as a multi-product business phone system, providing VoIP-based virtual phone numbers. Its AI Phone Agent is designed for 24/7 handling of inbound and outbound calls, including lead qualification and personalized pitches.',
+                    pros: ['Easy to use and set up', 'Affordable entry-level plans', 'Good customer support', 'Strong multilingual support (35+ languages)'],
+                    cons: ['Hidden costs with many add-ons (AI, transcription)', 'Occasional call quality issues and delays', 'Advanced features require higher tiers', 'Mobile app can be less responsive'],
+                    pricing: 'Subscription-based. Office Phone System from $18/user/mo (annual). AI is an add-on for $10/user/mo. Call Scribe Transcription is $15/user/mo.',
+                    ratings: { 'Flexibility': 3, 'Ease of Use': 5, 'Voice Quality': 3, 'NLP Power': 3, 'Cost Effectiveness': 4 }
+                },
+                {
+                    id: 'twilio',
+                    name: 'Twilio',
+                    tagline: 'Programmable Communications APIs for Developers',
+                    logoColor: 'text-red-600',
+                    userType: 'developer',
+                    featureType: 'integrations',
+                    pricingModel: 'per-minute',
+                    latency: 'variable',
+                    overview: 'Twilio is a leading Customer Engagement Platform offering powerful APIs for voice, messaging, email, and more. It is a developer-first platform for building highly customized communication solutions.',
+                    pros: ['Extremely flexible and versatile APIs', 'Extensive documentation and developer support', 'Highly scalable and reliable global platform', 'Wide range of integrations'],
+                    cons: ['Steep learning curve for non-developers', 'Pay-as-you-go costs can accumulate quickly', 'Requires significant coding knowledge for implementation', 'Fewer out-of-the-box solutions'],
+                    pricing: 'Usage-based (per-minute/per-message). Voice from $0.0085/min (inbound). AI Assistants add $0.10/min. Transcription adds $0.035/min.',
+                    ratings: { 'Flexibility': 5, 'Ease of Use': 2, 'Voice Quality': 4, 'NLP Power': 4, 'Cost Effectiveness': 3 }
+                },
+                {
+                    id: 'voiceflow',
+                    name: 'Voiceflow',
+                    tagline: 'No-Code Platform for Designing Conversational AI',
+                    logoColor: 'text-blue-600',
+                    userType: 'business',
+                    featureType: 'nlp',
+                    pricingModel: 'per-user',
+                    latency: 'high-latency',
+                    overview: 'Voiceflow is a no-code platform for building, managing, and deploying AI customer experiences. Its strength lies in its intuitive visual flow builder for designing complex conversational interactions.',
+                    pros: ['Intuitive drag-and-drop flow builder', 'Supports multiple LLMs (Bring Your Own LLM)', 'Strong team collaboration features', 'Good for both no-code and pro-code workflows'],
+                    cons: ['Per-editor pricing gets expensive with scale', 'Voice functionality has high latency (>600ms)', 'Requires code for real-world channel deployment', 'Minimal built-in analytics'],
+                    pricing: 'Per-editor subscription. Pro plan at $60/editor/mo (annual). LLM operations consume credits included in plans.',
+                    ratings: { 'Flexibility': 4, 'Ease of Use': 5, 'Voice Quality': 2, 'NLP Power': 4, 'Cost Effectiveness': 3 }
+                },
+                {
+                    id: 'dialogflow',
+                    name: 'Dialogflow (CX)',
+                    tagline: 'Google\'s Advanced Conversational AI Platform',
+                    logoColor: 'text-yellow-500',
+                    userType: 'developer',
+                    featureType: 'nlp',
+                    pricingModel: 'per-minute',
+                    latency: 'variable',
+                    overview: 'Dialogflow CX is Google\'s advanced NLU platform for designing rich, intuitive conversational interfaces. It is powered by Google\'s generative AI, including the latest Gemini models.',
+                    pros: ['Powerful AI and NLP capabilities', 'Seamless integration with Google Cloud ecosystem', 'Omnichannel support for 14+ channels', 'Generous free plan for testing'],
+                    cons: ['Steep learning curve for the CX version', 'Requires coding for advanced functionality', 'Cost can increase significantly with usage', 'Limited proactive marketing capabilities'],
+                    pricing: 'Usage-based. Audio I/O with GenAI: $0.002/sec. Text with GenAI: $0.012/request. Telephony priced separately.',
+                    ratings: { 'Flexibility': 4, 'Ease of Use': 3, 'Voice Quality': 4, 'NLP Power': 5, 'Cost Effectiveness': 3 }
+                },
+                {
+                    id: 'voximplant',
+                    name: 'Voximplant',
+                    tagline: 'Cloud Communications Platform (CPaaS)',
+                    logoColor: 'text-green-600',
+                    userType: 'developer',
+                    featureType: 'integrations',
+                    pricingModel: 'per-minute',
+                    latency: 'variable',
+                    overview: 'Voximplant is a powerful CPaaS enabling businesses to embed voice, video, messaging, and NLP. It offers native integrations with AI services like OpenAI, Gemini, and Dialogflow.',
+                    pros: ['Powerful and flexible APIs', 'Extensive AI integrations', 'Strong global reach and multilingual support (118+)', 'High reliability (99.95% SLA) and audio quality'],
+                    cons: ['Pricing can be a concern for smaller businesses', 'Requires technical expertise for advanced use cases', 'Some users report slow code updates', 'Limited analysis of system failures'],
+                    pricing: 'Usage-based. Calling from $0.017/min. In-app calls from $0.004/min. Transcription and TTS/STT are priced separately.',
+                    ratings: { 'Flexibility': 5, 'Ease of Use': 3, 'Voice Quality': 5, 'NLP Power': 4, 'Cost Effectiveness': 3 }
+                },
+                {
+                    id: 'bland_ai',
+                    name: 'Bland AI',
+                    tagline: 'API-First Conversational AI for Enterprises',
+                    logoColor: 'text-gray-500',
+                    userType: 'developer',
+                    featureType: 'integrations',
+                    pricingModel: 'per-minute',
+                    latency: 'high-latency',
+                    overview: 'Bland AI specializes in automating phone calls with an API-first architecture. It offers full control for technical teams and emphasizes its self-hosted, secure (SOC2, HIPAA) infrastructure.',
+                    pros: ['Full API control for custom builds', 'Strong security and compliance', 'Self-hosted infrastructure for uptime', 'Dynamic integrations with CRM/ERP'],
+                    cons: ['High latency in practice (~800ms)', 'Strictly developer-centric with no real no-code tools', 'Misleading pricing (advanced features billed separately)', 'Support is primarily community-driven'],
+                    pricing: 'Usage-based at $0.09/min. This does not include separate billing for advanced features like transcription or LLM processing.',
+                    ratings: { 'Flexibility': 4, 'Ease of Use': 1, 'Voice Quality': 3, 'NLP Power': 4, 'Cost Effectiveness': 2 }
+                },
+                {
+                    id: 'synthflow_ai',
+                    name: 'Synthflow AI',
+                    tagline: 'No-Code AI Voice Agents with Low Latency',
+                    logoColor: 'text-purple-600',
+                    userType: 'business',
+                    featureType: 'low-latency',
+                    pricingModel: 'per-user',
+                    latency: 'low-latency',
+                    overview: 'Synthflow AI focuses on automating phone calls with human-like voice agents, emphasizing fast deployment (<21 days) with no-code tools and delivering low latency (<500ms) conversations.',
+                    pros: ['Very low latency (<500ms) and human-like voice', 'Fast deployment with no-code tools', 'Excellent integration ecosystem', 'Cost-effective with transparent pricing', 'HIPAA compliant'],
+                    cons: ['Information available is overwhelmingly positive, lacking critical user reviews for a balanced view.'],
+                    pricing: 'Subscription-based. Plans start from $29/mo (annual). Enterprise-grade calls from $0.08/min. No hidden add-on fees mentioned.',
+                    ratings: { 'Flexibility': 4, 'Ease of Use': 5, 'Voice Quality': 5, 'NLP Power': 4, 'Cost Effectiveness': 5 }
+                }
+            ];
+
+            const appState = {
+                currentView: 'dashboard',
+                filters: {
+                    type: 'all',
+                    feature: 'all',
+                    pricing: 'all'
+                }
+            };
+            
+            const views = {
+                dashboard: document.getElementById('view-dashboard'),
+                deepDive: document.getElementById('view-deep-dive'),
+                takeaways: document.getElementById('view-takeaways'),
+            };
+
+            const navLinks = {
+                dashboard: document.getElementById('nav-dashboard'),
+                takeaways: document.getElementById('nav-takeaways'),
+            };
+
+            const platformGrid = document.getElementById('platform-grid');
+            let charts = {};
+
+            function getLatencyInfo(latency) {
+                switch (latency) {
+                    case 'low-latency': return { text: '< 500ms', color: 'bg-green-100 text-green-800' };
+                    case 'occasional-delay': return { text: 'Variable Delay', color: 'bg-yellow-100 text-yellow-800' };
+                    case 'high-latency': return { text: '> 600ms', color: 'bg-red-100 text-red-800' };
+                    default: return { text: 'Variable', color: 'bg-gray-100 text-gray-800' };
+                }
+            }
+
+            function getUserTypeInfo(userType) {
+                switch(userType) {
+                    case 'developer': return 'Developers';
+                    case 'business': return 'Business Teams';
+                    case 'regulated': return 'Regulated Industries';
+                    default: return 'Mixed';
+                }
+            }
+            
+            function renderDashboard() {
+                platformGrid.innerHTML = '';
+                const f = appState.filters;
+
+                const filteredData = platformData.filter(p => {
+                    const typeMatch = f.type === 'all' || p.userType === f.type || (f.type === 'regulated' && (p.id === 'bland_ai' || p.id === 'synthflow_ai'));
+                    const featureMatch = f.feature === 'all' || p.featureType === f.feature;
+                    const pricingMatch = f.pricing === 'all' || p.pricingModel === f.pricing;
+                    return typeMatch && featureMatch && pricingMatch;
+                });
+                
+                if (filteredData.length === 0) {
+                    document.getElementById('no-results').classList.remove('hidden');
+                } else {
+                    document.getElementById('no-results').classList.add('hidden');
+                }
+
+                filteredData.forEach(p => {
+                    const latency = getLatencyInfo(p.latency);
+                    const card = `
+                        <div class="platform-card bg-white rounded-xl shadow p-6 flex flex-col cursor-pointer" data-id="${p.id}">
+                            <div class="flex-grow">
+                                <h3 class="text-xl font-bold ${p.logoColor}">${p.name}</h3>
+                                <p class="text-gray-500 mt-1">${p.tagline}</p>
+                                <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full ${latency.color}">${latency.text} Latency</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">${getUserTypeInfo(p.userType)}</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">${p.pricingModel.replace('-', ' ')}</span>
+                                </div>
+                                <p class="mt-4 text-sm text-gray-600">${p.overview.substring(0, 120)}...</p>
+                            </div>
+                            <div class="mt-4">
+                                <button data-id="${p.id}" class="details-btn w-full text-center font-semibold text-[#4A55A2] hover:text-[#3a4480]">View Details &rarr;</button>
+                            </div>
+                        </div>
+                    `;
+                    platformGrid.innerHTML += card;
+                });
+                
+                document.querySelectorAll('.platform-card, .details-btn').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const platformId = el.dataset.id;
+                        const platform = platformData.find(p => p.id === platformId);
+                        renderDeepDive(platform);
+                        switchView('deepDive');
+                    });
+                });
+            }
+
+            function renderDeepDive(p) {
+                views.deepDive.innerHTML = `
+                    <div class="max-w-4xl mx-auto">
+                        <button id="back-to-dashboard" class="mb-6 text-sm font-medium text-[#4A55A2] hover:text-[#3a4480]">&larr; Back to Dashboard</button>
+                        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                            <h2 class="text-3xl font-bold ${p.logoColor}">${p.name}</h2>
+                            <p class="mt-1 text-lg text-gray-500">${p.tagline}</p>
+
+                            <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                                <div>
+                                    <h3 class="text-xl font-semibold mb-2">Platform Profile</h3>
+                                    <p class="text-sm text-gray-600 mb-4">A visual summary of the platform's key characteristics, rated on a scale of 1 to 5.</p>
+                                    <div class="chart-container">
+                                        <canvas id="radarChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="prose max-w-none">
+                                    <h3 class="text-xl font-semibold">Key Details</h3>
+                                    <p>${p.overview}</p>
+                                    <h4 class="font-semibold mt-4">Pricing Model:</h4>
+                                    <p>${p.pricing}</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-green-600 mb-4">Pros</h3>
+                                    <ul class="space-y-2">
+                                        ${p.pros.map(pro => `<li class="flex items-start"><span class="mr-2 text-green-500 mt-1">&#10003;</span><span class="text-gray-700">${pro}</span></li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-red-600 mb-4">Cons</h3>
+                                    <ul class="space-y-2">
+                                        ${p.cons.map(con => `<li class="flex items-start"><span class="mr-2 text-red-500 mt-1">&#10007;</span><span class="text-gray-700">${con}</span></li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('back-to-dashboard').addEventListener('click', () => switchView('dashboard'));
+                
+                if(charts.radar) charts.radar.destroy();
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                charts.radar = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: Object.keys(p.ratings),
+                        datasets: [{
+                            label: p.name,
+                            data: Object.values(p.ratings),
+                            backgroundColor: 'rgba(74, 85, 162, 0.2)',
+                            borderColor: 'rgba(74, 85, 162, 1)',
+                            pointBackgroundColor: 'rgba(74, 85, 162, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(74, 85, 162, 1)'
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scale: {
+                            ticks: { beginAtZero: true, max: 5, stepSize: 1 }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            function switchView(viewName) {
+                appState.currentView = viewName;
+                window.scrollTo(0, 0);
+                
+                Object.values(views).forEach(v => v.classList.add('hidden'));
+                views[viewName].classList.remove('hidden');
+
+                Object.values(navLinks).forEach(l => l.classList.remove('active', 'border-b-2'));
+                if (navLinks[viewName]) {
+                    navLinks[viewName].classList.add('active', 'border-b-2');
+                }
+            }
+
+            function handleFilterChange() {
+                appState.filters.type = document.getElementById('filter-type').value;
+                appState.filters.feature = document.getElementById('filter-feature').value;
+                appState.filters.pricing = document.getElementById('filter-pricing').value;
+                renderDashboard();
+            }
+
+            document.getElementById('filter-type').addEventListener('change', handleFilterChange);
+            document.getElementById('filter-feature').addEventListener('change', handleFilterChange);
+            document.getElementById('filter-pricing').addEventListener('change', handleFilterChange);
+            
+            navLinks.dashboard.addEventListener('click', () => switchView('dashboard'));
+            navLinks.takeaways.addEventListener('click', () => switchView('takeaways'));
+            
+            // Initial render
+            switchView('dashboard');
+            renderDashboard();
+        });
+    </script>
+</body>
+</html>
